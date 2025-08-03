@@ -1,214 +1,128 @@
-# ==============================================================================
-# ||                                                                          ||
-# ||             SIMPLE DIGITAL BOOKSTORE SCRIPT (WITH A BUG)                 ||
-# ||                                                                          ||
-# ==============================================================================
-#
-# Description: This version contains an intentional logic error that will
-#              cause the program to crash with a KeyError under a specific
-#              scenario.
+import json
 
-import traceback
-
-
-# --- 1. GLOBAL DATA "DATABASE" ---
-BOOK_DATABASE = [
-    {
-        "id": 101,
-        "title": "The Hitchhiker's Guide to the Galaxy",
-        "author": "Douglas Adams",
-        "price": 12.50,
-        "stock": 5
-    },
-    {
-        "id": 205,
-        "title": "Dune",
-        "author": "Frank Herbert",
-        "price": 15.75,
-        "stock": 8
-    },
-    {
-        "id": 310,
-        "title": "Fahrenheit 451",
-        "author": "Ray Bradbury",
-        "price": 10.00,
-        "stock": 10
-    },
-    {
-        "id": 451,
-        "title": "1984",
-        "author": "George Orwell",
-        "price": 9.25,
-        "stock": 0
-    },
-    # !!! THIS BOOK IS DESIGNED TO CAUSE THE ERROR !!!
-    # Notice it has a "format" key but is MISSING the "stock" key.
-    {
-        "id": 777,
-        "title": "The Art of Python (Digital E-book)",
-        "author": "AI Coder",
-        "price": 25.00,
-        "format": "digital" 
-    }
+# In-memory database for books and user carts
+books_db = [
+    {"id": "1", "title": "The Great Adventure", "author": "A.B. Coder", "price": 15.00, "stock": 5},
+    {"id": "2", "title": "Mystery of the Missing Semicolon", "author": "C.D. Bugfixer", "price": 12.50, "stock": 3},
+    {"id": "3", "title": "Learning Python", "author": "E.F. Developer", "price": 20.00, "stock": 0}
 ]
 
-SHOPPING_CART = []
+user_carts = {} # Stores carts as: {"user_id": {"book_id": quantity, ...}}
 
-
-# --- 2. CORE FUNCTIONS ---
-
-def display_all_books():
-    """
-    This function loops through the BOOK_DATABASE and prints the details.
-    """
-    print("\n--- Available Books in Our Store ---")
-    print("-" * 75)
-    print(f"{'ID':<5} | {'Title':<45} | {'Author':<15} | {'Price':<7}")
-    print("-" * 75)
-    
-    for book in BOOK_DATABASE:
-        title = book["title"]
-        author = book["author"]
-        price_str = f"${book['price']:.2f}"
-        
-        # Check if the book has a 'stock' key and if it's > 0
-        if 'stock' in book and book["stock"] > 0:
-            print(f"{book['id']:<5} | {title:<45} | {author:<15} | {price_str:<7}")
-        # Check if the book is digital
-        elif 'format' in book and book['format'] == 'digital':
-            print(f"{book['id']:<5} | {title:<45} | {author:<15} | {price_str:<7}")
-        else:
-            # Otherwise, assume it's out of stock
-            print(f"{book['id']:<5} | {title:<45} | {author:<15} | {'OUT OF STOCK':<7}")
-            
-    print("-" * 75)
-
+def list_books():
+    """Lists all available books with their details."""
+    print("--- Available Books ---")
+    for book in books_db:
+        stock_status = f"{book['stock']} in stock" if book['stock'] > 0 else "Out of stock"
+        print(f"ID: {book['id']}, Title: {book['title']}, Author: {book['author']}, Price: ${book['price']:.2f}, Stock: {stock_status}")
+    print("-----------------------")
 
 def add_book_to_cart():
-    """
-    This function asks the user for a book ID and adds it to the cart.
-    
-    !!! INTENTIONAL LOGIC ERROR IS IN THIS FUNCTION !!!
-    
-    THE FLAW:
-    The code correctly finds the book by its ID. However, it then immediately
-    tries to check `if found_book["stock"] > 0:`. This line of code ASSUMES
-    that EVERY book dictionary will have a "stock" key.
-    
-    When the user tries to add the "Digital E-book" (ID 777), the `found_book`
-    dictionary will be `{'id': 777, 'title': ..., 'format': 'digital'}`.
-    When Python tries to access `found_book["stock"]`, it won't find that key,
-    and the program will crash with a `KeyError`.
-    """
+    """Allows a user to add a book to their cart."""
+    user_id = input("Enter your user ID: ")
+    book_id = input("Enter the ID of the book you want to add: ")
+    quantity_str = input("Enter the quantity: ")
+
     try:
-        book_id_to_add = int(input("\nEnter the ID of the book you want to add to your cart: "))
+        quantity = int(quantity_str)
+        if quantity <= 0:
+            print("Quantity must be a positive number.")
+            return
     except ValueError:
-        print("\n[!] Invalid input. Please enter a numerical ID.")
+        print("Invalid quantity. Please enter a number.")
         return
 
     found_book = None
-    for book in BOOK_DATABASE:
-        if book["id"] == book_id_to_add:
+    for book in books_db:
+        if book["id"] == book_id:
             found_book = book
             break
 
-    if found_book:
-        # --- THE CRASH WILL HAPPEN ON THE NEXT LINE ---
-        # The code does not check if the 'stock' key exists before using it.
-        if found_book["stock"] > 0: 
-            SHOPPING_CART.append(found_book["id"])
-            found_book["stock"] -= 1 # This would also fail for the same reason
-            print(f"\n[SUCCESS] '{found_book['title']}' has been added to your cart.")
-        else:
-            print(f"\n[SORRY] '{found_book['title']}' is currently out of stock.")
-    else:
-        print(f"\n[!] Error: No book found with ID {book_id_to_add}.")
-
-
-def view_shopping_cart():
-    """
-    Displays the contents of the shopping cart, including the total cost.
-    """
-    print("\n--- Your Shopping Cart ---")
-    if not SHOPPING_CART:
-        print("Your shopping cart is currently empty.")
-        print("-" * 28)
+    if not found_book:
+        print("Book not found.")
         return
 
-    total_price = 0.0
-    for item_id in SHOPPING_CART:
-        for book in BOOK_DATABASE:
-            if book["id"] == item_id:
-                print(f"  - {book['title']:<40} ${book['price']:.2f}")
-                total_price += book['price']
-                break 
+    if found_book.get("stock", 0) > 0: # Fix: Use .get() with a default value to prevent KeyError
+        if found_book["stock"] >= quantity:
+            if user_id not in user_carts:
+                user_carts[user_id] = {}
+            
+            user_carts[user_id][book_id] = user_carts[user_id].get(book_id, 0) + quantity
+            found_book["stock"] -= quantity
+            print(f"{quantity} of '{found_book['title']}' added to your cart.")
+        else:
+            print(f"Not enough stock for '{found_book['title']}'. Available: {found_book['stock']}")
+    else:
+        print(f"'{found_book['title']}' is out of stock.")
 
-    print("-" * 28)
-    print(f"Total Price: ${total_price:.2f}")
-    print("-" * 28)
+def view_cart():
+    """Displays the contents of a user's cart."""
+    user_id = input("Enter your user ID to view cart: ")
 
+    cart = user_carts.get(user_id)
+    if not cart:
+        print("Your cart is empty or user ID not found.")
+        return
+
+    print(f"--- {user_id}'s Cart ---")
+    total_price = 0
+    for book_id, quantity in cart.items():
+        book = next((b for b in books_db if b["id"] == book_id), None)
+        if book:
+            item_price = book["price"] * quantity
+            total_price += item_price
+            print(f"Title: {book['title']}, Quantity: {quantity}, Price: ${item_price:.2f}")
+    print(f"Total: ${total_price:.2f}")
+    print("-----------------------")
 
 def checkout():
-    """
-    Finalizes the purchase and clears the cart.
-    """
-    view_shopping_cart()
-    if not SHOPPING_CART:
-        print("Add items to your cart before checking out.")
+    """Processes the user's cart and clears it."""
+    user_id = input("Enter your user ID to checkout: ")
+
+    if user_id not in user_carts or not user_carts[user_id]:
+        print("Your cart is empty.")
         return
 
-    print("\nThank you for your purchase!")
-    SHOPPING_CART.clear()
-    print("Your shopping cart has been cleared.")
+    print(f"--- Checking out {user_id}'s Cart ---")
+    total_price = 0
+    for book_id, quantity in list(user_carts[user_id].items()): # Use list() to allow modification during iteration
+        book = next((b for b in books_db if b["id"] == book_id), None)
+        if book:
+            item_price = book["price"] * quantity
+            total_price += item_price
+            print(f"Purchased: {book['title']} x {quantity}")
+        else:
+            print(f"Warning: Book with ID {book_id} not found in database, but was in cart.")
+    
+    print(f"Total amount: ${total_price:.2f}")
+    user_carts[user_id] = {} # Clear the cart
+    print("Checkout complete. Your cart has been cleared.")
+    print("-----------------------")
 
-
-# --- 3. MAIN PROGRAM LOOP ---
 def main():
-    try:
-        """Main function that runs the application loop."""
+    """Main function to run the bookstore application."""
+    while True:
+        print("\n--- Bookstore Menu ---")
+        print("1. List Books")
+        print("2. Add Book to Cart")
+        print("3. View Cart")
+        print("4. Checkout")
+        print("5. Exit")
+        choice = input("Enter your choice: ")
 
-        ERROR_LOG = "/Users/apple/Desktop/GenAI Stuff/PatchIQ_AI/PatchIQAI_App/Agent Test Code/errors.log"
+        if choice == '1':
+            list_books()
+        elif choice == '2':
+            add_book_to_cart()
+        elif choice == '3':
+            view_cart()
+        elif choice == '4':
+            checkout()
+        elif choice == '5':
+            print("Exiting Bookstore. Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
 
-        print("\nWelcome to the Digital Bookstore!")
-        while True:
-            print("\n==================== MENU ====================")
-            print("1. View all available books")
-            print("2. Add a book to your shopping cart")
-            print("3. View your shopping cart")
-            print("4. Checkout")
-            print("5. Exit the bookstore")
-            print("============================================")
-            
-            choice = input("Please enter your choice (1-5): ")
-            
-            if choice == '1':
-                display_all_books()
-            elif choice == '2':
-                add_book_to_cart()
-            elif choice == '3':
-                view_shopping_cart()
-            elif choice == '4':
-                checkout()
-            elif choice == '5':
-                print("\nThank you for visiting. Goodbye!\n")
-                break
-            else:
-                print("\n[!] Invalid choice. Please enter a number from 1 to 5.")
-    except Exception:
-        traceback_str = traceback.format_exc()
-        with open(ERROR_LOG, "w") as f:
-            f.write(traceback_str)
-
-        print("\n⚠️ Exception occurred! Error written to", ERROR_LOG)
-        print("🤖 Triggering fix agent...")
-
-        # spawn agent in same event loop
-        from agent_fix_bot import fix_agent_main
-        import asyncio
-
-        result = asyncio.run(fix_agent_main())
-        print("\n✅ Fix process completed. JSON summary:")
-        print(result)
-
-
-main()
+if __name__ == "__main__":
+    main()
