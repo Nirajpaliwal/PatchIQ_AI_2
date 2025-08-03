@@ -1,8 +1,8 @@
 def add(data):
     num1 = data.get('num1')
     num2 = data.get('num2')
-    
-    result = num1 + num2
+
+    result = int(num1) + int(num2)
   
     return {
         'result': result,
