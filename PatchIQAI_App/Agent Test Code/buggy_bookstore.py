@@ -103,12 +103,18 @@ def add_book_to_cart():
             break
 
     if found_book:
-        if found_book["stock"] > 0: 
+        if 'stock' in found_book: # Check if 'stock' key exists
+            if found_book["stock"] > 0: 
+                SHOPPING_CART.append(found_book["id"])
+                found_book["stock"] -= 1
+                print(f"\n[SUCCESS] '{found_book['title']}' has been added to your cart.")
+            else:
+                print(f"\n[SORRY] '{found_book['title']}' is currently out of stock.")
+        elif 'format' in found_book and found_book['format'] == 'digital': # Check if it's a digital book
             SHOPPING_CART.append(found_book["id"])
-            found_book["stock"] -= 1
-            print(f"\n[SUCCESS] '{found_book['title']}' has been added to your cart.")
+            print(f"\n[SUCCESS] '{found_book['title']}' (Digital) has been added to your cart.")
         else:
-            print(f"\n[SORRY] '{found_book['title']}' is currently out of stock.")
+            print(f"\n[INFO] '{found_book['title']}' cannot be added to cart due to unknown availability status.")
     else:
         print(f"\n[!] Error: No book found with ID {book_id_to_add}.")
 
