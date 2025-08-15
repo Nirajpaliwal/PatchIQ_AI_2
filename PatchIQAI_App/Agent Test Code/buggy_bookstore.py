@@ -3,15 +3,10 @@
 # ||             SIMPLE DIGITAL BOOKSTORE SCRIPT (WITH A BUG)                 ||
 # ||                                                                          ||
 # ==============================================================================
-#
-# Description: This version contains an intentional logic error that will
-#              cause the program to crash with a KeyError under a specific
-#              scenario.
 
 import traceback
 
 
-# --- 1. GLOBAL DATA "DATABASE" ---
 BOOK_DATABASE = [
     {
         "id": 101,
@@ -41,8 +36,6 @@ BOOK_DATABASE = [
         "price": 9.25,
         "stock": 0
     },
-    # !!! THIS BOOK IS DESIGNED TO CAUSE THE ERROR !!!
-    # Notice it has a "format" key but is MISSING the "stock" key.
     {
         "id": 777,
         "title": "The Art of Python (Digital E-book)",
@@ -53,9 +46,6 @@ BOOK_DATABASE = [
 ]
 
 SHOPPING_CART = []
-
-
-# --- 2. CORE FUNCTIONS ---
 
 def display_all_books():
     """
@@ -113,11 +103,9 @@ def add_book_to_cart():
             break
 
     if found_book:
-        # --- THE CRASH WILL HAPPEN ON THE NEXT LINE ---
-        # The code does not check if the 'stock' key exists before using it.
         if found_book["stock"] > 0: 
             SHOPPING_CART.append(found_book["id"])
-            found_book["stock"] -= 1 # This would also fail for the same reason
+            found_book["stock"] -= 1
             print(f"\n[SUCCESS] '{found_book['title']}' has been added to your cart.")
         else:
             print(f"\n[SORRY] '{found_book['title']}' is currently out of stock.")
@@ -162,7 +150,6 @@ def checkout():
     print("Your shopping cart has been cleared.")
 
 
-# --- 3. MAIN PROGRAM LOOP ---
 def main():
     try:
         """Main function that runs the application loop."""
@@ -202,13 +189,10 @@ def main():
         print("\n⚠️ Exception occurred! Error written to", ERROR_LOG)
         print("🤖 Triggering fix agent...")
 
-        # spawn agent in same event loop
-        from agent_fix_bot import fix_agent_main
+        from patch_iq_agent import main
         import asyncio
 
-        result = asyncio.run(fix_agent_main())
-        print("\n✅ Fix process completed. JSON summary:")
-        print(result)
+        result = asyncio.run(main())
 
 
 main()
