@@ -1,6 +1,6 @@
 def add(data):
-    num1 = data.get('num1')
-    num2 = data.get('num2')
+    num1 = int(data.get('num1'))
+    num2 = int(data.get('num2'))
     
     result = num1 + num2
   
