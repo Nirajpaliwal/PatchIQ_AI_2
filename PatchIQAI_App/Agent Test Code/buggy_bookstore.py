@@ -113,14 +113,20 @@ def add_book_to_cart():
             break
 
     if found_book:
-        # --- THE CRASH WILL HAPPEN ON THE NEXT LINE ---
-        # The code does not check if the 'stock' key exists before using it.
-        if found_book["stock"] > 0: 
+        # --- FIX START ---
+        # Check if the book has a 'stock' key and if it's > 0 (for physical books)
+        if 'stock' in found_book and found_book["stock"] > 0:
             SHOPPING_CART.append(found_book["id"])
-            found_book["stock"] -= 1 # This would also fail for the same reason
+            found_book["stock"] -= 1 # Decrement stock only for physical books
             print(f"\n[SUCCESS] '{found_book['title']}' has been added to your cart.")
+        # Check if the book is digital (always available)
+        elif 'format' in found_book and found_book['format'] == 'digital':
+            SHOPPING_CART.append(found_book["id"])
+            print(f"\n[SUCCESS] '{found_book['title']}' (Digital) has been added to your cart.")
         else:
-            print(f"\n[SORRY] '{found_book['title']}' is currently out of stock.")
+            # Otherwise, it's out of stock or unavailable (e.g., stock is 0, or no stock/format key)
+            print(f"\n[SORRY] '{found_book['title']}' is currently out of stock or unavailable.")
+        # --- FIX END ---
     else:
         print(f"\n[!] Error: No book found with ID {book_id_to_add}.")
 
